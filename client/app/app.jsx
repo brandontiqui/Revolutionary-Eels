@@ -8,9 +8,6 @@ class App extends React.Component {
   render() {
     return (
       <div>
-        <div className="TextEditor">
-          <TextEditor />
-        </div>
         <div className="Video">
           <AppVideo />
           <Chat />

@@ -94,11 +94,6 @@
 	        null,
 	        _react2.default.createElement(
 	          'div',
-	          { className: 'TextEditor' },
-	          _react2.default.createElement(_TextEditor2.default, null)
-	        ),
-	        _react2.default.createElement(
-	          'div',
 	          { className: 'Video' },
 	          _react2.default.createElement(_Video2.default, null),
 	          _react2.default.createElement(_Chat2.default, null)

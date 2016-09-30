@@ -1,10 +1,7 @@
-.TextEditor {
+.ql-toolar,
+.ql-snow,
+#editor {
 	width: 50vw;
-	outline: none;
-	font-size: 1em;
-	font-family: arial;
-	background-color: #F1F0F0;
-	padding: 5px;
 	float: left;
 }
 
