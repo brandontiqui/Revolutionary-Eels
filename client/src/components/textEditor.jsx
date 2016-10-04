@@ -3,6 +3,15 @@ import { render } from 'react-dom';
 import axios from 'axios';
 
 class TextEditor extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      quill: null,
+      saveInterval: null
+    };
+
+  };
 
   componentDidMount () {
     var Delta = Quill.import('delta');
@@ -17,57 +26,70 @@ class TextEditor extends React.Component {
       theme: 'snow'
     });
 
-    var socket = io();
+    // setSate is async
+    this.setState({ quill: quill }, () => { 
+      console.log('async quill', this.state.quill)
+      var socket = io();
 
-    var change = new Delta();
-    quill.on('text-change', function(delta, olddelta, source) {
-      if (source === 'user') {
-        change = change.compose(delta); // for saving partial changes
-        socket.emit('change', {'sharelinkId': sharelinkId, 'who': user, 'delta': JSON.stringify(delta)});
-      }
-    });
-
-    socket.on('change', function(msg){
-      if(msg.who !== user && sharelinkId === msg.sharelinkId) { // prevent infinite loop; user who emitted msg should not receive it
-        var del = JSON.parse(msg.delta);
-        quill.updateContents( del );
-      }
-    });
-    
-    console.log('sharelinkid:', sharelinkId);
-    axios.get('/document?sharelink=' + sharelinkId)
-      .then(function(res) {
-      quill.setContents( JSON.parse(res.data.textS3) );
-      })
-      .catch(function(err) {
-        console.log('Error:' + err);
+      var change = new Delta();
+      quill.on('text-change', function(delta, olddelta, source) {
+        if (source === 'user') {
+          change = change.compose(delta); // for saving partial changes
+          socket.emit('change', {'sharelinkId': sharelinkId, 'who': user, 'delta': JSON.stringify(delta)});
+        }
       });
 
-    var saveInterval = setInterval(function() {
-      if (change.length() > 0) {
-        console.log('Saving changes', sharelinkId);
-
-        // should commet out to limit AWS RDS db hits
-        axios.put('/document', {
-        	sharelink: sharelinkId,
-        	textS3: JSON.stringify(quill.getContents())
+      socket.on('change', function(msg){
+        if(msg.who !== user && sharelinkId === msg.sharelinkId) { // prevent infinite loop; user who emitted msg should not receive it
+          var del = JSON.parse(msg.delta);
+          quill.updateContents( del );
+        }
+      });
+      
+      console.log('sharelinkid:', sharelinkId);
+      axios.get('/document?sharelink=' + sharelinkId)
+        .then(function(res) {
+        quill.setContents( JSON.parse(res.data.textS3) );
         })
-          .then(function(result) {
-            console.log('data saved');
+        .catch(function(err) {
+          console.log('Error:' + err);
+        });
 
-            change = new Delta();
+      var saveInterval = setInterval(function() {
+        if (change.length() > 0) {
+          console.log('Saving changes', sharelinkId);
 
-          });
-      } 
-    }, 5000);
+          // should commet out to limit AWS RDS db hits
+          axios.put('/document', {
+          	sharelink: sharelinkId,
+          	textS3: JSON.stringify(quill.getContents())
+          })
+            .then(function(result) {
+              console.log('data saved');
+
+              change = new Delta();
+
+            });
+        } 
+      }, 5000);
+
+      this.setState({ saveInterval: saveInterval });
+    });
+
+    
+
   }
 
-  makeDoc () {
+  makeDoc (quill) {
+    // console.log('quill:', this.state.quill)
+    var Delta = Quill.import('delta');
+    var change = new Delta();
+
   	// sharelinkId = docId;
     var sharelinkId = 'doc' + Date.now(); 
 
     // need to stop interval and restart
-    clearInterval(saveInterval);
+    clearInterval(this.state.saveInterval);
 
     var saveInterval = setInterval(function() {
       if (change.length() > 0) {
@@ -81,28 +103,32 @@ class TextEditor extends React.Component {
           .then(function(result) {
             console.log('data saved');
 
-            change = new Delta();
+            // change = new Delta();
 
           });
       } 
     }, 5000);
 
-    axios.post('/document', {
-    	sharelink: sharelinkId
-    })
-      .then(function(res) {
-        console.log('new doc:', sharelinkId);
-        quill.setContents();
+    this.setState({ saveInterval: saveInterval }, () => {
+      axios.post('/document', {
+      	sharelink: sharelinkId
+      })
+        .then(function(res) {
+          console.log('new doc:', sharelinkId);
+          quill.setContents();
 
-        var emaillink = window.location.hostname + ':' + window.location.port + '?sharelink=' + sharelinkId;
-        console.log('link to pass', emaillink);
-      });
+          var emaillink = window.location.hostname + ':' + window.location.port + '?sharelink=' + sharelinkId;
+          console.log('link to pass', emaillink);
+        });
+      
+    });
+
   }
 
   render () {
   	return (
   		<div>
-		    <button id="newdoc" onClick={ this.makeDoc }>New Document</button>
+		    <button id="newdoc" onClick={ () => { this.makeDoc(this.state.quill) } }>New Document</button>
 	      <div id="editor">
 	        <p>Type here...</p>
 	      </div>
