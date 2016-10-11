@@ -39,7 +39,7 @@ class DocumentList extends React.Component {
   	// 	return;
   	// }
   	// this.props.dispatch(doclist.clearMessage());
-	  var sharelinkId = username + Date.now();
+	  var sharelinkId = 'doc' + Date.now();
 
 	  axios.post('/document', {
 	  	username: username,
@@ -48,7 +48,6 @@ class DocumentList extends React.Component {
 	  	title: 'untitled'
 	  })
 	  .then(function(res) {
-
 		  browserHistory.push('/?sharelink=' + sharelinkId);
 	  })
 	  .catch(function(err) {
