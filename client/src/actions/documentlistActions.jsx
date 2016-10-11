@@ -26,3 +26,10 @@ export function setInputvalue(val) {
 		inputValue: val
 	}
 }
+
+export function setUserId(curUser) {
+	return {
+		type: 'SET_USERID',
+		curUser: curUser
+	}
+}

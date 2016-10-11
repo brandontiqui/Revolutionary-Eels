@@ -5,6 +5,7 @@ import { Link } from 'react-router';
 import { browserHistory } from 'react-router';
 import { connect } from 'react-redux';
 import * as doclist from '../actions/documentlistActions.jsx';
+// set curUser: user id using username
 
 class DocumentList extends React.Component {
 
@@ -13,8 +14,15 @@ class DocumentList extends React.Component {
   }
 
   componentDidMount () {
+    var username = window.localStorage.user.slice(1, window.localStorage.user.length - 1);
+    axios.get('users/?username=' + username)
+      .then(function(res) {
+        this.props.dispatch( doclist.setUserId(JSON.stringify(res.data.id) ));
+      }.bind(this))
+      .catch(function(err) {
+        console.log('Error retrieving user.')
+      });
 
-    console.log('local:', 'document/all?username=' + window.localStorage.user.slice(1, window.localStorage.user.length - 1));
   	//populate documents array with list of documents for user
     axios.get('document/all?username=' + window.localStorage.user.slice(1, window.localStorage.user.length - 1))
       .then(function(res) {
@@ -58,7 +66,6 @@ class DocumentList extends React.Component {
 	        docs.splice(index, 1);
 
 	        this.props.dispatch( doclist.populateDocs(docs) );
-	        console.log('docs after deleting: ', this.props.documents)
 	  	  }.bind(this));
 	  	} 
   }
@@ -101,11 +108,9 @@ class DocumentList extends React.Component {
   }
   
   openDoc (doc) {
-   // <a href={ 'http://localhost:8000/?sharelink=' + doc.sharelink }>{ doc.title }</a>
    browserHistory.push('/?sharelink=' + doc);
   }
 	// Title: <input value={ this.props.inputValue } onChange={ this.updateInputValue.bind(this) }type='text' placeholder='Enter the title for the document'/>
-
 
 	render() {
 		var messageStyle = {
@@ -169,6 +174,7 @@ export default connect((store) => {
 		message: store.documentlist.message,
 		username: store.documentlist.username,
 		documents: store.documentlist.documents,
-		inputValue: store.documentlist.inputValue
+		inputValue: store.documentlist.inputValue,
+    curUser: store.documentlist.curUser
 	}
 })(DocumentList);

@@ -2,7 +2,8 @@ const initialState = {
 	username: 'b',
 	documents: [],
 	inputValue: '',
-	message: ''
+	message: '',
+  curUser: null
 }
 
 export default function(state = initialState, action) {
@@ -22,6 +23,10 @@ export default function(state = initialState, action) {
     case 'SET_INPUTVALUE':
       return Object.assign({}, state, {
       	inputValue: action.inputValue
+      });
+    case 'SET_USERID':
+      return Object.assign({}, state, {
+        curUser: action.curUser
       });
   	default:
   	  return state;

@@ -3,19 +3,24 @@ import { render } from 'react-dom';
 import axios from 'axios';
 import { connect } from 'react-redux';
 import * as editor from '../actions/editorActions.jsx';
-
+import * as doclist from '../actions/documentlistActions.jsx';
 
 
 class TextEditor extends React.Component {
   constructor(props) {
     super(props);
-
-    // ?
-    // this.setState = this.setState.bind(this);
-
   };
 
   componentDidMount () {
+    var username = window.localStorage.user.slice(1, window.localStorage.user.length - 1);
+    axios.get('users/?username=' + username)
+      .then(function(res) {
+        this.props.dispatch( doclist.setUserId(JSON.stringify(res.data.id) ));
+      }.bind(this))
+      .catch(function(err) {
+        console.log('Error retrieving user.')
+      });
+
     var Delta = Quill.import('delta');
     var urldocId = window.location.search.split('').splice(11).join('');
     var user = 'user_' + Date.now(); // temp unique user identifier; swap out later with username
@@ -24,9 +29,6 @@ class TextEditor extends React.Component {
     var context = this;
     var setSelectionLoc = this.props.setSelectionLoc;
     
-
-    console.log(user + ' logged on.');
-
     var sharelinkId = urldocId.length === 0 ? 'hr46' : urldocId; // default to public doc if there is no doc id in url
     
 
@@ -44,7 +46,6 @@ class TextEditor extends React.Component {
 
       var change = new Delta();
       quill.on('text-change', function(delta, olddelta, source) {
-        console.log( 'get text method: ', quill.getText().slice( 0, quill.getText().indexOf('\n') ));
         if (source === 'user') {
           change = change.compose(delta); // for saving partial changes
           socket.emit('change', {'sharelinkId': sharelinkId, 'who': user, 'delta': JSON.stringify(delta)});
@@ -84,7 +85,6 @@ class TextEditor extends React.Component {
         }
       });
       
-      console.log('sharelinkid:', sharelinkId);
       axios.get('/document?sharelink=' + sharelinkId)
         .then(function(res) {
         quill.setContents( JSON.parse(res.data.textS3) );
@@ -143,11 +143,11 @@ class TextEditor extends React.Component {
 // export default TextEditor;
 
 export default connect((store) => {
-  console.log('store:', store);
   return {
     quill: store.editor.quill,
     saveInterval: null,
     sharelinkId: store.editor.sharelinkId,
-    user: null
+    user: null,
+    curUser: store.documentlist.curUser
   }
 })(TextEditor);
